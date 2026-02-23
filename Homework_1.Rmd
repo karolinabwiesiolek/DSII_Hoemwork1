@@ -1,0 +1,239 @@
+---
+title: "Homework1"
+output: html_document
+date: "2026-02-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+
+```{r setup-a, message=FALSE, warning=FALSE}
+# If you haven't installed these yet:
+# install.packages(c("glmnet", "dplyr"))
+
+library(glmnet)  # lasso / elastic net via glmnet
+library(dplyr)   # rename(), %>%, etc.
+```
+
+```{r}
+
+```
+
+
+
+### 1) Set your working directory (your HW folder)
+
+You told me your folder is:
+
+`/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1`
+
+Use this (copy exactly):
+
+```{r set-wd-a}
+setwd("/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1")
+
+# sanity check: shows what R thinks the folder is
+getwd()
+
+# sanity check: shows what files R sees inside this folder
+list.files()
+```
+
+
+**Explanation**
+- `setwd(...)` tells R “this is the folder where my files live.”
+- `list.files()` is your fastest way to confirm the exact filenames (spaces, underscores, “(1)”, etc.).
+
+---
+
+### 2) Read training + test data (robust to filename variations)
+
+This chunk tries to find the train/test/dictionary files even if they have slightly different names (like “training (1).csv”).
+
+```{r read-data-a}
+# --- Helper function: find a file by keyword pattern ---
+pick_file <- function(pattern) {
+  f <- list.files(pattern = pattern, ignore.case = TRUE)
+  if (length(f) == 0) stop("Could not find file matching pattern: ", pattern)
+  f[1]  # take the first match
+}
+
+train_file <- pick_file("train|training")
+test_file  <- pick_file("test")
+dict_file  <- pick_file("dict|dictionary")
+
+train_raw <- read.csv(train_file, stringsAsFactors = FALSE, check.names = FALSE)
+test_raw  <- read.csv(test_file,  stringsAsFactors = FALSE, check.names = FALSE)
+
+dim(train_raw)
+dim(test_raw)
+names(train_raw)[1:10]
+```
+
+**Explanation**
+- `pick_file()` searches your folder using a regex pattern.
+- `read.csv(..., check.names = FALSE)` prevents R from silently changing column names (important because your response is `"Sale price"` with a space).
+- `stringsAsFactors = FALSE` keeps character columns as character (we’ll handle dummy coding ourselves).
+
+---
+
+### 3) Standardize the response column name
+
+Your homework says the response column is `"Sale price"`, but sometimes it appears as `"Sale_Price"` or `"SalePrice"`. This code detects it and renames it to `SalePrice` in both train/test.
+
+```{r response-col-a}
+resp_candidates <- c("Sale price", "Sale_Price", "SalePrice", "sale_price", "Sale Price")
+
+resp_train <- resp_candidates[resp_candidates %in% names(train_raw)][1]
+resp_test  <- resp_candidates[resp_candidates %in% names(test_raw)][1]
+
+stopifnot(!is.na(resp_train), !is.na(resp_test))
+
+train_raw <- train_raw %>% rename(SalePrice = all_of(resp_train))
+test_raw  <- test_raw  %>% rename(SalePrice = all_of(resp_test))
+
+summary(train_raw$SalePrice)
+```
+
+
+**Explanation**
+- We search for likely spellings of the response column.
+- `stopifnot(...)` immediately stops with an error if the response column wasn’t found (better than silently running wrong code).
+- Renaming to `SalePrice` makes everything consistent.
+
+---
+
+## 4) Build the `x` matrix and `y` vector for glmnet
+
+`glmnet` does **not** take a data frame with factors directly. It wants:
+- `x`: numeric matrix (including dummy variables for categories)
+- `y`: numeric response vector
+
+`model.matrix()` does the dummy encoding for you.
+
+
+```{r design-matrix-a}
+# model.matrix creates dummy variables for factors/characters automatically.
+# We remove the intercept column because glmnet includes an intercept by default.
+x_train <- model.matrix(SalePrice ~ ., data = train_raw)[, -1]
+y_train <- train_raw$SalePrice
+
+x_test  <- model.matrix(SalePrice ~ ., data = test_raw)[, -1]
+y_test  <- test_raw$SalePrice
+
+dim(x_train)
+dim(x_test)
+```
+
+
+**Explanation**
+- `SalePrice ~ .` means “use every other column as a predictor.”
+- `[, -1]` drops the intercept column.
+- Dummy encoding is crucial: categorical variables become 0/1 columns.
+
+---
+
+## 5) Fit LASSO with 10-fold CV and get tuning parameter
+
+Lasso is `alpha = 1`.
+
+```{r lasso-fit-a}
+set.seed(2026)  # makes CV folds reproducible
+
+cv_lasso <- cv.glmnet(
+  x = x_train,
+  y = y_train,
+  alpha = 1,       # alpha=1 => LASSO
+  nfolds = 10,     # 10-fold cross-validation
+  standardize = TRUE  # default TRUE; keeps predictors on comparable scales
+)
+
+# Plot CV curve
+plot(cv_lasso)
+
+lambda_min <- cv_lasso$lambda.min  # lambda with minimum CV error
+lambda_1se <- cv_lasso$lambda.1se  # 1SE rule lambda (more regularized)
+
+lambda_min
+lambda_1se
+```
+
+
+**Explanation**
+- `cv.glmnet()` fits many lasso models across a sequence of λ values and evaluates them by CV.
+- `lambda.min` = best CV performance (lowest mean CV error).
+- `lambda.1se` = simplest model whose CV error is within **1 standard error** of the minimum (tends to select fewer predictors).
+
+---
+
+## 6) Test error (RMSE) at λ_min (and optionally λ_1se)
+
+The homework asks for “test error.” In regression we usually report RMSE.
+
+```{r lasso-testerror-a}
+rmse <- function(pred, truth) sqrt(mean((pred - truth)^2))
+
+# Predictions on test set
+pred_test_min <- as.numeric(predict(cv_lasso, newx = x_test, s = "lambda.min"))
+pred_test_1se <- as.numeric(predict(cv_lasso, newx = x_test, s = "lambda.1se"))
+
+test_rmse_min <- rmse(pred_test_min, y_test)
+test_rmse_1se <- rmse(pred_test_1se, y_test)
+
+test_rmse_min
+test_rmse_1se
+```
+
+
+
+**Explanation**
+- `predict(..., s="lambda.min")` uses the model tuned by CV and predicts test outcomes.
+- RMSE is in the same units as the outcome (`SalePrice`), so it’s easy to interpret.
+
+> If your instructor expects MSE instead of RMSE, just square the RMSE or compute mean((pred-truth)^2).
+
+---
+
+## 7) How many predictors are included with the 1SE rule?
+
+We count how many coefficients are non-zero at `lambda.1se`.  
+We do **not** count the intercept.
+
+
+```{r lasso-1se-count-a}
+coef_1se <- coef(cv_lasso, s = "lambda.1se")  # sparse matrix of coefficients
+
+# Count non-zero coefficients excluding intercept (first row)
+n_predictors_1se <- sum(coef_1se[-1, 1] != 0)
+
+n_predictors_1se
+```
+
+
+**Explanation**
+- Lasso sets many coefficients exactly to 0.
+- Non-zero coefficients correspond to “selected predictors.”
+- `coef_1se[-1, ]` removes the intercept row before counting.
+
+---
+
+## 8) Final “report” lines for Part (a)
+
+This prints exactly what you need to paste into your write-up.
+
+
+```{r report-a}
+cat("Part (a) results:\n")
+cat("Selected tuning parameter (lambda.min):", lambda_min, "\n")
+cat("Test RMSE at lambda.min:", test_rmse_min, "\n\n")
+
+cat("1SE rule lambda (lambda.1se):", lambda_1se, "\n")
+cat("Test RMSE at lambda.1se:", test_rmse_1se, "\n")
+cat("Number of predictors (nonzero) at lambda.1se:", n_predictors_1se, "\n")
+```
+
+
+## QUESTION 2 
