@@ -357,16 +357,12 @@ display: none;
 
 <div id="question-1" class="section level1">
 <h1>Question 1</h1>
-<pre class="r"><code># If you haven&#39;t installed these yet:
-# install.packages(c(&quot;glmnet&quot;, &quot;dplyr&quot;))
-
-library(glmnet)  # lasso / elastic net via glmnet
-library(dplyr)   # rename(), %&gt;%, etc.</code></pre>
-<div id="set-your-working-directory-your-hw-folder" class="section level3">
-<h3>1) Set your working directory (your HW folder)</h3>
-<p>You told me your folder is:</p>
-<p><code>/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1</code></p>
-<p>Use this (copy exactly):</p>
+<p>I am going to add packages as needed, allows me to keep better track
+of questions and solving procedures.</p>
+<pre class="r"><code>library(glmnet)  
+library(dplyr)  </code></pre>
+<div id="working-directory" class="section level3">
+<h3>1) Working Directory</h3>
 <pre class="r"><code>setwd(&quot;/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1&quot;)
 
 # sanity check: shows what R thinks the folder is
@@ -374,8 +370,9 @@ getwd()</code></pre>
 <pre><code>## [1] &quot;/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1&quot;</code></pre>
 <pre class="r"><code># sanity check: shows what files R sees inside this folder
 list.files()</code></pre>
-<pre><code>## [1] &quot;dictionary.txt&quot;       &quot;Homework_1.Rmd&quot;       &quot;Homework_1.Rproj&quot;    
-## [4] &quot;housing_test.csv&quot;     &quot;housing_training.csv&quot; &quot;README.md&quot;</code></pre>
+<pre><code>## [1] &quot;dictionary.txt&quot;       &quot;Homework_1.html&quot;      &quot;Homework_1.Rmd&quot;      
+## [4] &quot;Homework_1.Rproj&quot;     &quot;housing_test.csv&quot;     &quot;housing_training.csv&quot;
+## [7] &quot;README.md&quot;</code></pre>
 <p><strong>Explanation</strong> - <code>setwd(...)</code> tells R “this
 is the folder where my files live.” - <code>list.files()</code> is your
 fastest way to confirm the exact filenames (spaces, underscores, “(1)”,

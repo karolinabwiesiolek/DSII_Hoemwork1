@@ -10,27 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Question 1
 
+I am going to add packages as needed, allows me to keep better track of questions and solving procedures. 
 ```{r setup-a, message=FALSE, warning=FALSE}
-# If you haven't installed these yet:
-# install.packages(c("glmnet", "dplyr"))
-
-library(glmnet)  # lasso / elastic net via glmnet
-library(dplyr)   # rename(), %>%, etc.
-```
-
-```{r}
-
+library(glmnet)  
+library(dplyr)  
 ```
 
 
-
-### 1) Set your working directory (your HW folder)
-
-You told me your folder is:
-
-`/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1`
-
-Use this (copy exactly):
+### 1) Working Directory
 
 ```{r set-wd-a}
 setwd("/Users/karolinawiesiolek/Desktop/Mailman Spring 2026/DSII/HW1/Homework_1")
