@@ -1,7 +1,8 @@
 ---
-title: "Homework1"
-output: pdf_document
-date: "2026-02-23"
+title: "Homework 1"
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -150,13 +151,13 @@ lambda_1se
 
 
 **Explanation**
-- `cv.glmnet()` fits many lasso models across a sequence of λ values and evaluates them by CV.
+- `cv.glmnet()` fits many lasso models across a sequence of lamb values and evaluates them by CV.
 - `lambda.min` = best CV performance (lowest mean CV error).
 - `lambda.1se` = simplest model whose CV error is within **1 standard error** of the minimum (tends to select fewer predictors).
 
 ---
 
-## 6) Test error (RMSE) at λ_min (and optionally λ_1se)
+## 6) Test error (RMSE) at $\lambda_{\min}$ (and optionally lambda_1se)
 
 The homework asks for “test error.” In regression we usually report RMSE.
 
@@ -787,7 +788,7 @@ Caret and glmnet can select different tuning parameters even when fitting the �
 
 ---
 
-If you paste your `comparison` table output, I’ll help you write 2–3 sentences *specific to your numbers* (i.e., “caret chose λ=..., glmnet chose λ=..., the discrepancy likely comes from ...”).
+If you paste your `comparison` table output, I’ll help you write 2–3 sentences *specific to your numbers* (i.e., “caret chose lambda=..., glmnet chose lambda=..., the discrepancy likely comes from ...”).
 
 ```{r}
 tinytex::reinstall_tinytex()
